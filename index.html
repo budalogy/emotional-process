@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>社畜生存模擬器：情緒邊界保衛戰</title>
+  <style>
+    :root {
+      --boss: #4c7cf0;
+      --player: #54c98b;
+      --bg: #eef1f5;
+      --text: #1f2937;
+      --danger: #ef4444;
+      --accent: #16a34a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Noto Sans TC', 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(145deg, #dfe7f7 0%, #f7fbff 60%, #e7f1ff 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .phone {
+      width: min(480px, 100%);
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e5e7eb;
+    }
+    header {
+      padding: 14px 18px;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .stats { flex: 1; }
+    .bar {
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .bar span { display: block; height: 100%; border-radius: 12px; transition: width 0.4s ease; }
+    .bar.hp span { background: #f97316; }
+    .bar.kpi span { background: #38bdf8; }
+    .label { display: flex; justify-content: space-between; font-size: 13px; }
+
+    .chat {
+      flex: 1;
+      background: var(--bg);
+      padding: 14px 14px 90px;
+      overflow-y: auto;
+      position: relative;
+    }
+    .bubble {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      margin: 8px 0;
+      position: relative;
+      line-height: 1.4;
+      font-size: 15px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+    .bubble.left { background: #fff; align-self: flex-start; border-top-left-radius: 6px; }
+    .bubble.right { background: #dcfce7; align-self: flex-end; border-top-right-radius: 6px; color: #0f172a; }
+    .sender { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }
+
+    .options {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding: 10px 12px 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .options button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 10px;
+      background: #0ea5e9;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+      box-shadow: 0 8px 18px rgba(14,165,233,0.2);
+    }
+    .options button:hover { transform: translateY(-1px); }
+    .options button:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .options button:disabled { background: #cbd5e1; color: #475569; cursor: not-allowed; box-shadow: none; }
+
+    .stage {
+      text-align: center;
+      padding: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #475569;
+      letter-spacing: 0.3px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 18px;
+      max-width: 520px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .modal h3 { margin-top: 0; margin-bottom: 8px; }
+    .modal p { margin: 6px 0; line-height: 1.5; }
+    .modal button { margin-top: 12px; width: 100%; padding: 10px; border-radius: 10px; border: none; background: #0ea5e9; color: #fff; font-weight: 700; cursor: pointer; }
+
+    .ending {
+      padding: 16px;
+      text-align: center;
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+    }
+    .ending h2 { margin: 8px 0 4px; }
+    .tag {
+      display: inline-flex;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-bottom: 6px;
+      gap: 6px;
+      align-items: center;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header>
+      <div class="stats">
+        <div class="label"><span>心理能量 HP</span><strong id="hpValue">100</strong></div>
+        <div class="bar hp"><span id="hpBar" style="width:100%"></span></div>
+      </div>
+      <div class="stats">
+        <div class="label"><span>工作評價 KPI</span><strong id="kpiValue">60</strong></div>
+        <div class="bar kpi"><span id="kpiBar" style="width:60%"></span></div>
+      </div>
+    </header>
+
+    <div class="stage" id="stageInfo">上午 10:00 - 面對奧客/老闆的無理要求</div>
+    <div class="chat" id="chat"></div>
+    <div class="options" id="options"></div>
+    <div class="ending hidden" id="ending"></div>
+  </div>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3>心理學小教室</h3>
+      <p id="modalText"></p>
+      <button id="closeModal">了解，繼續前進</button>
+    </div>
+  </div>
+
+  <script>
+    const stages = [
+      {
+        time: '上午 10:00 - 面對奧客/老闆的無理要求',
+        sender: 'Boss',
+        msg: '【@你】客戶很生氣！立刻處理，別再拖。',
+        options: [
+          {
+            label: '表層扮演：秒回道歉',
+            hp: -20, kpi: 10,
+            feedback: '你選擇了「表層扮演」。外在表現與內在情緒不一致，產生情緒失調 (Emotional Dissonance)。雖然迎合了老闆的情緒勞動要求，KPI 上升，但 HP 大幅消耗。'
+          },
+          {
+            label: '深層扮演：同理客戶',
+            hp: -10, kpi: 10,
+            feedback: '你進行「深層扮演」，試著從客戶角度出發，降低情緒失調。這屬於較健康的情緒勞動形式，KPI 獲得提升，HP 只小幅減少。'
+          },
+          {
+            label: '真實情緒宣洩：直接反擊',
+            hp: 5, kpi: -30,
+            feedback: '你表達了真實情緒，短暫釋放壓力 (HP 回升)。但在高權力距離情境下，這破壞工作關係，KPI 大幅下降，幾乎是職場自殺。'
+          }
+        ]
+      },
+      {
+        time: '下午 3:00 - 茶水間的情緒風暴',
+        sender: '同事 A',
+        msg: '老闆又發瘋了！真的超爛，你不覺得嗎？(怒吼 500 字)',
+        options: [
+          {
+            label: '情緒傳染：一起抱怨',
+            hp: -25, kpi: 0,
+            feedback: '你讓自己陷入「情緒傳染」(Emotional Contagion)，與同事 A 的憤怒共鳴。雖然 KPI 不變，但長時間負面情緒耗竭讓 HP 大幅下降。'
+          },
+          {
+            label: '同理關懷：溫柔聆聽',
+            hp: -5, kpi: 5,
+            feedback: '你展現「同理關懷」，肯定同事的感受但保持界線。這提升人際連結 (KPI 小幅上升)，同時只消耗少量情緒能量。'
+          },
+          {
+            label: '尋求工具支持：找 B 前輩',
+            hp: 0, kpi: 10,
+            feedback: '你避開負面情緒，轉向同事 B 的「工具性/資訊性支持」。透過實質協助提升 KPI，同時維持 HP。這是健康的資源獲取策略。'
+          }
+        ]
+      },
+      {
+        time: '晚上 10:30 - 數位界線的崩解',
+        sender: 'Boss',
+        msg: '報告明早要用，現在改完給我。',
+        options: [
+          {
+            label: '隨時待命：立刻改',
+            hp: -30, kpi: 15,
+            feedback: '你選擇「隨時待命」(Always-on)。這種數位監控文化模糊公私界線，雖讓 KPI 大增，但 HP 被嚴重透支，可能走向倦怠。'
+          },
+          {
+            label: '設立界線：明天再回',
+            hp: 10, kpi: -10,
+            feedback: '你透過「界線管理」維護私人時間，HP 回升。短期看 KPI 下滑，但長期有助於預防情緒耗竭，維持健康。'
+          },
+          {
+            label: '委婉拖延：折衷談判',
+            hp: -5, kpi: -5,
+            feedback: '你選擇「委婉拖延」，試圖協商。這在數位邊界管理上是折衷策略：KPI 小幅下降，HP 也略為消耗。'
+          }
+        ]
+      }
+    ];
+
+    const chat = document.getElementById('chat');
+    const options = document.getElementById('options');
+    const stageInfo = document.getElementById('stageInfo');
+    const hpValue = document.getElementById('hpValue');
+    const kpiValue = document.getElementById('kpiValue');
+    const hpBar = document.getElementById('hpBar');
+    const kpiBar = document.getElementById('kpiBar');
+    const ending = document.getElementById('ending');
+    const modal = document.getElementById('modal');
+    const modalText = document.getElementById('modalText');
+    const closeModal = document.getElementById('closeModal');
+
+    let hp = 100;
+    let kpi = 60;
+    let currentStage = 0;
+
+    function updateBars() {
+      hpValue.textContent = Math.max(0, hp);
+      kpiValue.textContent = Math.max(0, kpi);
+      hpBar.style.width = Math.max(0, Math.min(hp, 100)) + '%';
+      kpiBar.style.width = Math.max(0, Math.min(kpi, 100)) + '%';
+      hpBar.style.background = hp <= 30 ? 'var(--danger)' : '#f97316';
+      kpiBar.style.background = kpi <= 45 ? '#f59e0b' : '#38bdf8';
+    }
+
+    function addBubble(text, sender, isPlayer = false) {
+      const wrap = document.createElement('div');
+      wrap.className = `bubble ${isPlayer ? 'right' : 'left'}`;
+      wrap.innerHTML = `<div class="sender">${sender}</div>${text}`;
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showOptions(stage) {
+      options.innerHTML = '';
+      stage.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = opt.label;
+        btn.onclick = () => handleChoice(opt, stage.sender);
+        options.appendChild(btn);
+      });
+      stageInfo.textContent = stage.time;
+      addBubble(stage.msg, stage.sender);
+    }
+
+    function handleChoice(choice, sender) {
+      addBubble(choice.label, '你', true);
+      hp += choice.hp;
+      kpi += choice.kpi;
+      updateBars();
+      showFeedback(choice.feedback);
+      currentStage++;
+      if (checkEnding()) return;
+      if (currentStage < stages.length) {
+        setTimeout(() => showOptions(stages[currentStage]), 400);
+      } else {
+        showFinal();
+      }
+    }
+
+    function showFeedback(text) {
+      modalText.textContent = text + ' (概念：情緒勞動 / 情緒傳染 / 工具性支持 / 公私界線)';
+      modal.style.display = 'flex';
+    }
+
+    closeModal.addEventListener('click', () => {
+      modal.style.display = 'none';
+      checkEnding();
+    });
+
+    function checkEnding() {
+      if (hp <= 0) {
+        showGameOver('心理能量歸零：職業倦怠 (Burnout) 送醫治療', '建議：長期表層扮演與失衡的情緒勞動會導致耗竭。嘗試界線管理、尋求支持。');
+        return true;
+      }
+      if (kpi < 40) {
+        showGameOver('KPI 低於 40：被解僱', '提醒：完全忽視組織期望雖短暫舒壓，但會犧牲職涯安全。平衡真實表達與情緒規範更可持續。');
+        return true;
+      }
+      return false;
+    }
+
+    function showGameOver(title, desc) {
+      options.innerHTML = '';
+      ending.classList.remove('hidden');
+      ending.innerHTML = `
+        <div class="tag">⚠️ 結局</div>
+        <h2>${title}</h2>
+        <p>${desc}</p>
+        <p>最終 HP：${Math.max(0, hp)} ｜ KPI：${Math.max(0, kpi)}</p>
+      `;
+      stageInfo.textContent = '— 遊戲結束 —';
+      modal.style.display = 'none';
+    }
+
+    function showFinal() {
+      ending.classList.remove('hidden');
+      const balance = hp >= 50 && kpi >= 60;
+      const msg = balance
+        ? '恭喜！你在情緒勞動與職場期待間找到平衡，成功守住心理邊界。'
+        : '今天暫時度過，但情緒管理與邊界感需要持續調整。';
+      ending.innerHTML = `
+        <div class="tag">📊 收尾</div>
+        <h2>${msg}</h2>
+        <p>最終 HP：${hp} ｜ KPI：${kpi}</p>
+        <p>反思：維持情緒界線 (Boundary Management)、適度深層扮演、尋求工具性支持，能避免情緒傳染與耗竭。</p>
+      `;
+      stageInfo.textContent = '— 今日結束，明天繼續學習邊界管理 —';
+    }
+
+    // init
+    updateBars();
+    showOptions(stages[currentStage]);
+  </script>
+</body>
+</html>
