@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>社畜生存模擬器：情緒邊界保衛戰</title>
+  <style>
+    :root {
+      --boss: #4f86ff;
+      --player: #53c173;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2d3d;
+      --muted: #6b7a90;
+      --danger: #ff6b6b;
+      --warning: #f4a261;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(83, 193, 115, 0.15), transparent 30%),
+                  radial-gradient(circle at 80% 0%, rgba(79, 134, 255, 0.15), transparent 25%),
+                  var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .phone {
+      width: min(420px, 95vw);
+      height: 90vh;
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    header {
+      padding: 12px 16px;
+      background: linear-gradient(120deg, #4f86ff, #53c173);
+      color: #fff;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .metric {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .metric-title {
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 4px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5));
+      mix-blend-mode: screen;
+      opacity: 0.4;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .chat {
+      flex: 1;
+      padding: 12px 16px 0;
+      overflow-y: auto;
+      background: linear-gradient(180deg, rgba(79, 134, 255, 0.07), rgba(83, 193, 115, 0.07));
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: 16px;
+      margin: 6px 0;
+      position: relative;
+      line-height: 1.45;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .bubble .meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .from-other {
+      background: #fff;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .from-player {
+      background: var(--player);
+      color: #fff;
+      margin-left: auto;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .options {
+      padding: 12px 16px 16px;
+      background: #f7f9fc;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      display: grid;
+      gap: 10px;
+    }
+
+    .option-btn {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: left;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.2s ease;
+    }
+
+    .option-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .option-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .option-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .option-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stage-label {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 6px 0 2px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .modal {
+      background: #fff;
+      max-width: 520px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      animation: pop 0.25s ease;
+    }
+
+    @keyframes pop { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal h3 { margin-top: 0; }
+    .modal p { margin: 8px 0; line-height: 1.6; }
+
+    .modal .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      background: #eef2ff;
+      color: #3f51b5;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(63,81,181,0.15);
+    }
+
+    .modal button {
+      margin-top: 12px;
+      width: 100%;
+      background: linear-gradient(120deg, #4f86ff, #53c173);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .ending {
+      text-align: center;
+      padding: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header>
+      <div class="metric">
+        <div class="metric-title">心理能量 (HP)</div>
+        <div class="progress" aria-label="HP 進度條">
+          <div class="bar" id="hp-bar" style="background: linear-gradient(90deg, #ff9a9e, #ff6b6b); width: 100%"></div>
+        </div>
+      </div>
+      <div class="metric">
+        <div class="metric-title">工作評價 (KPI)</div>
+        <div class="progress" aria-label="KPI 進度條">
+          <div class="bar" id="kpi-bar" style="background: linear-gradient(90deg, #a1c4fd, #4f86ff); width: 60%"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="options" id="options"></div>
+  </div>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">心理學小教室</h3>
+      <p id="modal-body"></p>
+      <div class="tags" id="modal-tags"></div>
+      <button id="modal-close">知道了，繼續</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const optionsEl = document.getElementById('options');
+    const hpBar = document.getElementById('hp-bar');
+    const kpiBar = document.getElementById('kpi-bar');
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+    const modalTags = document.getElementById('modal-tags');
+
+    const state = { hp: 100, kpi: 60, stage: 0, locked: false, ended: false };
+
+    const stages = [
+      {
+        time: '上午 10:00',
+        title: '面對奧客/老闆的無理要求',
+        intro: '老闆在群組標註你，說客戶很生氣，要你立刻處理（其實是對方的錯）。',
+        speaker: 'Boss',
+        tone: '老闆 (數位監控者)',
+        options: [
+          {
+            key: 'A',
+            title: '表層扮演 (Surface Acting)',
+            text: '「好的老闆！我馬上處理，真抱歉讓客戶不開心！」',
+            hp: -20,
+            kpi: +10,
+            tags: ['情緒勞動', '情緒失調'],
+            feedback: '你選擇了「表層扮演」，表面裝出服務笑容，讓 KPI 上升，但內在感受與外顯表情不一致產生情緒失調，心理能量大幅下降。'
+          },
+          {
+            key: 'B',
+            title: '深層扮演 (Deep Acting)',
+            text: '「老闆，我理解客戶現在很焦急，我會試著從協助他的角度出發，立刻去溝通。」',
+            hp: -10,
+            kpi: +10,
+            tags: ['情緒勞動', '同理'],
+            feedback: '你嘗試「深層扮演」，重新詮釋情境以接近真實情緒，仍有消耗但情緒失調較低，兼顧 KPI 與健康。'
+          },
+          {
+            key: 'C',
+            title: '真實情緒宣洩',
+            text: '「這明明是客戶的問題，為什麼要我道歉？」',
+            hp: +5,
+            kpi: -30,
+            tags: ['職場風險', '情緒誠實'],
+            feedback: '你直接宣洩真實情緒，暫時舒爽並保住自尊，但違反職場規範讓 KPI 大幅降低，面臨失業風險。'
+          }
+        ]
+      },
+      {
+        time: '下午 3:00',
+        title: '茶水間的情緒風暴',
+        intro: '同事 A 傳訊給你：「欸，老闆剛剛又發瘋了，真的很爛耶...（下略500字抱怨）」',
+        speaker: '同事 A',
+        tone: '同事 A (情緒傳染源)',
+        options: [
+          {
+            key: 'A',
+            title: '情緒傳染 (Emotional Contagion)',
+            text: '「真的！我也覺得他超扯，上次還...」',
+            hp: -25,
+            kpi: 0,
+            tags: ['情緒傳染', '耗竭'],
+            feedback: '你被同事 A 的負面情緒捲入，產生情緒傳染，雖未影響 KPI，但心理能量快速流失。'
+          },
+          {
+            key: 'B',
+            title: '同理關懷 (Empathic Concern)',
+            text: '「聽起來你剛剛受了很多委屈，辛苦了。要不要先喝杯咖啡冷靜？」',
+            hp: -5,
+            kpi: +5,
+            tags: ['同理', '情緒界線'],
+            feedback: '你保持同理但不深入批評，提供情緒支持且維持界線，稍微消耗能量但累積人際資本。'
+          },
+          {
+            key: 'C',
+            title: '尋求工具支持',
+            text: '（忽略抱怨）「B前輩，我這邊卡關了，能教我怎麼回這封信嗎？」',
+            hp: 0,
+            kpi: +10,
+            tags: ['工具性支持', '任務導向'],
+            feedback: '你轉向同事 B 尋求工具性/資訊性支持，避免負面情緒傳染，同時提升工作表現。'
+          }
+        ]
+      },
+      {
+        time: '晚上 10:30',
+        title: '數位界線的崩解',
+        intro: '老闆訊息：「報告明早要用，你現在改一下傳給我。」手機震動，睡前寧靜被打破。',
+        speaker: 'Boss',
+        tone: '老闆 (數位監控者)',
+        options: [
+          {
+            key: 'A',
+            title: '隨時待命 (Always-on)',
+            text: '「收到，我馬上改。」',
+            hp: -30,
+            kpi: +15,
+            tags: ['數位監控', '情緒耗竭'],
+            feedback: '你選擇隨時待命，迎合數位監控文化，KPI 上升，但睡前工作嚴重侵蝕公私界線，HP 大幅流失。'
+          },
+          {
+            key: 'B',
+            title: '設立界線 (Boundary Setting)',
+            text: '已讀不回或開啟勿擾，明早再處理。',
+            hp: +10,
+            kpi: -10,
+            tags: ['公私界線', '自我照顧'],
+            feedback: '你主動設立界線，保護休息時間，HP 回復；但抗拒要求可能讓 KPI 下滑。'
+          },
+          {
+            key: 'C',
+            title: '委婉拖延 (Negotiation)',
+            text: '「老闆，我手邊沒有電腦，明早 8 點第一時間給您。」',
+            hp: -5,
+            kpi: -5,
+            tags: ['協商', '期望管理'],
+            feedback: '你採取折衷協商，維持部分界線並釐清期待，HP 小幅下降，但比全然配合更能保留能量。'
+          }
+        ]
+      }
+    ];
+
+    function addMessage({ text, from = 'other', meta = '' }) {
+      const wrap = document.createElement('div');
+      wrap.className = `bubble ${from === 'player' ? 'from-player' : 'from-other'}`;
+      wrap.innerHTML = `<div>${text}</div>${meta ? `<div class="meta">${meta}</div>` : ''}`;
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addStageLabel(text) {
+      const label = document.createElement('div');
+      label.className = 'stage-label';
+      label.textContent = text;
+      chat.appendChild(label);
+    }
+
+    function updateMeters() {
+      hpBar.style.width = Math.max(0, Math.min(100, state.hp)) + '%';
+      kpiBar.style.width = Math.max(0, Math.min(100, state.kpi)) + '%';
+      hpBar.style.background = state.hp < 30 ? `linear-gradient(90deg, #ff6b6b, #ff9a9e)` : `linear-gradient(90deg, #ff9a9e, #ff6b6b)`;
+      kpiBar.style.background = state.kpi < 40 ? `linear-gradient(90deg, #f4a261, #ff6b6b)` : `linear-gradient(90deg, #a1c4fd, #4f86ff)`;
+    }
+
+    function showOptions(stage) {
+      optionsEl.innerHTML = '';
+      stage.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<div class="option-title">${opt.key}. ${opt.title}</div><div>${opt.text}</div><div class="option-meta">HP ${opt.hp >= 0 ? '+' : ''}${opt.hp}, KPI ${opt.kpi >= 0 ? '+' : ''}${opt.kpi}</div>`;
+        btn.onclick = () => chooseOption(opt, stage);
+        btn.disabled = state.locked;
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function showModal(opt) {
+      modalBody.textContent = opt.feedback;
+      modalTags.innerHTML = '';
+      opt.tags.forEach(tag => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = tag;
+        modalTags.appendChild(span);
+      });
+      modal.style.display = 'flex';
+      modal.dataset.ready = 'true';
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+      modal.dataset.ready = '';
+      if (!state.ended) nextStage();
+    }
+
+    function chooseOption(opt, stage) {
+      if (state.locked || state.ended) return;
+      state.locked = true;
+      addMessage({ text: opt.text, from: 'player', meta: '你的回應' });
+      state.hp += opt.hp;
+      state.kpi += opt.kpi;
+      updateMeters();
+      showModal(opt);
+      checkEnding();
+    }
+
+    function checkEnding() {
+      if (state.hp <= 0) {
+        endGame('心理能量歸零：你出現嚴重職業倦怠，被送往醫院療養 (Burnout)。');
+      } else if (state.kpi < 40) {
+        endGame('KPI 低於 40：主管認定你表現不佳，你被解僱了。');
+      } else if (state.stage >= stages.length - 1 && modal.dataset.ready === 'true') {
+        setTimeout(() => {
+          const balance = state.hp >= 60 && state.kpi >= 60;
+          const ending = balance ? '你在情緒勞動與界線設立間取得平衡，順利撐過一天！' : '你勉強度過今天，但能量或評價都有隱憂，別忘了長期調整。';
+          endGame(ending, true);
+        }, 300);
+      }
+    }
+
+    function endGame(message, soft = false) {
+      state.ended = true;
+      const tone = soft ? '日終回顧' : '結局';
+      addStageLabel(tone);
+      addMessage({ text: message, from: 'other', meta: '系統訊息' });
+      optionsEl.innerHTML = '<div class="ending">重新整理頁面可再試一次不同的界線策略。</div>';
+    }
+
+    function nextStage() {
+      if (state.ended) return;
+      state.stage++;
+      const stage = stages[state.stage];
+      if (!stage) return;
+      addStageLabel(`${stage.time} · ${stage.title}`);
+      addMessage({ text: stage.intro, from: 'other', meta: stage.tone });
+      showOptions(stage);
+      state.locked = false;
+    }
+
+    function init() {
+      updateMeters();
+      const stage = stages[0];
+      addStageLabel(`${stage.time} · ${stage.title}`);
+      addMessage({ text: stage.intro, from: 'other', meta: stage.tone });
+      showOptions(stage);
+    }
+
+    document.getElementById('modal-close').addEventListener('click', () => {
+      closeModal();
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    init();
+  </script>
+</body>
+</html>
