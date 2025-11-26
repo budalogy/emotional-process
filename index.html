@@ -160,6 +160,20 @@
       align-items: center;
     }
     .hidden { display: none; }
+
+    .summary-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: left;
+      margin-top: 12px;
+    }
+    .summary-block h3 { margin: 8px 0; font-size: 15px; }
+    .summary-block ol { padding-left: 18px; margin: 8px 0; color: #0f172a; }
+    .summary-block li { margin-bottom: 8px; line-height: 1.4; }
+    .delta { font-size: 12px; color: #475569; }
+    .advice { padding-left: 18px; margin: 6px 0; color: #0f172a; }
   </style>
 </head>
 <body>
@@ -228,6 +242,37 @@
         ]
       },
       {
+        time: '晚上 11:00 - 客戶緊急電話回撥',
+        sender: '客戶',
+        msg: '剛剛看到你的修復方案，還是不確定線上會不會再爆。你能不能再開個會解釋？',
+        options: [
+          {
+            label: '立刻開會，但我會限制 20 分鐘內確認重點，先講最有風險的三個修復節點。',
+            hp: -10, kpi: 12,
+            theory: '設限式陪伴：給出支援但設定時間邊界。',
+            feedback: '你建立會議邊界並優先排序關鍵項，KPI 增加且 HP 只小幅下降。'
+          },
+          {
+            label: '我先錄一段 5 分鐘的重點解說給你，若還有疑問再約明早 9 點快速對焦。',
+            hp: -2, kpi: 10,
+            theory: '非同步交付：用錄音降低即時負荷。',
+            feedback: '你用非同步方式先安撫客戶，再約明早對焦，兼顧休息與進度。'
+          },
+          {
+            label: '我真的撐不住了，今天就先這樣，明天再討論。',
+            hp: 10, kpi: -12,
+            theory: '自我照顧優先：暫停工作以避免過勞。',
+            feedback: '你守住休息權，但客戶的不確定感升高，KPI 下降。'
+          },
+          {
+            label: '你要什麼我都照做，現在直接開全員會議，直到你覺得安心為止。',
+            hp: -24, kpi: 8,
+            theory: '過度補償：以耗竭換取短期穩定。',
+            feedback: '你無界線地投入，KPI 有所提升但 HP 大幅流失。'
+          }
+        ]
+      },
+      {
         time: '下午 3:00 - 茶水間抱怨風暴',
         sender: '同事 A',
         msg: '老闆又臨時改需求，昨天加班白做！這公司根本沒流程，你不覺得嗎？',
@@ -255,6 +300,37 @@
             hp: 10, kpi: -3,
             theory: '情緒調節：暫離情境降低杏仁核反應。',
             feedback: '你先處理情緒，HP 上升，但暫停任務讓 KPI 略降。'
+          }
+        ]
+      },
+      {
+        time: '隔天上午 9:30 - 早會需求變更',
+        sender: 'Boss',
+        msg: '董事長想看新的數據角度，報告要改成強調留存與黏著度，順便加上一頁競品分析。',
+        options: [
+          {
+            label: '我先確認要呈現的留存指標與時間區間，30 分鐘內給你新版大綱。競品分析需要資料庫，建議分階段提交。',
+            hp: -4, kpi: 14,
+            theory: '需求澄清＋分段交付：降低範圍蔓延。',
+            feedback: '你釐清重點並切分交付，KPI 上升且 HP 消耗有限。'
+          },
+          {
+            label: '全部照做，但需要團隊今天中午全力支援，可能會影響其他專案時程。',
+            hp: -14, kpi: 10,
+            theory: '全面接單：短期迎合，長期資源衝突。',
+            feedback: '你承諾所有需求，KPI 上升但 HP 明顯下滑且風險增加。'
+          },
+          {
+            label: '留存部分我可以先給，競品分析建議下週專門做一版深度報告，這樣品質比較好。',
+            hp: 2, kpi: 6,
+            theory: '品質導向：延後低價值任務以維持品質。',
+            feedback: '你聚焦在品質並延後次要需求，HP 微增，KPI 小幅提升。'
+          },
+          {
+            label: '這些變更太多了，我建議先維持原版，不然今天會來不及。',
+            hp: 6, kpi: -10,
+            theory: '範圍拒絕：避免任務爆量但犧牲期待管理。',
+            feedback: '你明確拒絕，HP 上升但 KPI 降低，需用後續交付補救。'
           }
         ]
       },
@@ -288,6 +364,37 @@
             feedback: '你用詢問與切分範圍來降低工作量，KPI 上升，HP 有一定消耗但可控制。'
           }
         ]
+      },
+      {
+        time: '隔天傍晚 6:30 - 回顧與自我檢核',
+        sender: 'Mentor',
+        msg: '今天你面對很多臨時要求，你覺得自己守住界線了嗎？下一步想怎麼調整？',
+        options: [
+          {
+            label: '我想記錄下這兩天的回覆策略，列出有效和耗能的行為，請你幫我調整。',
+            hp: 8, kpi: 8,
+            theory: '反思＋外部督導：用回顧建立行動計畫。',
+            feedback: '你主動整理經驗並尋求導師建議，HP 與 KPI 都上升。'
+          },
+          {
+            label: '我覺得自己一直在救火，很累但還是照單全收。我需要休息一天再說。',
+            hp: 12, kpi: -6,
+            theory: '恢復時間：暫停以補充心理能量。',
+            feedback: '你優先休息，HP 回升但 KPI 略降，需要後續溝通計畫。'
+          },
+          {
+            label: '其實我沒什麼問題，這樣的節奏我還扛得住，就繼續吧。',
+            hp: -6, kpi: 2,
+            theory: '忽略警訊：缺乏自我覺察可能導致遞延爆炸。',
+            feedback: '你壓抑疲勞繼續衝，KPI 小增但 HP 下降，倦怠風險提升。'
+          },
+          {
+            label: '我想設計一套「加班預警」流程，下次需求爆量時先判斷優先級並設定SLA。',
+            hp: 6, kpi: 12,
+            theory: '系統化防火：用流程和 SLA 預先鎖定界線。',
+            feedback: '你把個人經驗轉為流程，KPI 明顯提升且 HP 小幅回升。'
+          }
+        ]
       }
     ];
 
@@ -308,6 +415,7 @@
     let hp = 100;
     let kpi = 60;
     let currentStage = 0;
+    const choiceHistory = [];
 
     function updateBars() {
       hpValue.textContent = Math.max(0, hp);
@@ -345,7 +453,7 @@
       stage.options.forEach((opt) => {
         const btn = document.createElement('button');
         btn.textContent = opt.label;
-        btn.onclick = () => handleChoice(opt, stage.sender);
+        btn.onclick = () => handleChoice(opt, stage);
         options.appendChild(btn);
       });
       stageInfo.textContent = stage.time;
@@ -356,11 +464,19 @@
       }, 600);
     }
 
-    function handleChoice(choice, sender) {
+    function handleChoice(choice, stage) {
       disableOptions(true);
       addBubble(choice.label, '你', true);
       hp += choice.hp;
       kpi += choice.kpi;
+      choiceHistory.push({
+        stage: stage.time,
+        sender: stage.sender,
+        choice: choice.label,
+        deltaHp: choice.hp,
+        deltaKpi: choice.kpi,
+        feedback: choice.feedback
+      });
       updateBars();
       showFeedback(choice.feedback, choice.theory);
       currentStage++;
@@ -406,6 +522,7 @@
         <h2>${title}</h2>
         <p>${desc}</p>
         <p>最終 HP：${Math.max(0, hp)} ｜ KPI：${Math.max(0, kpi)}</p>
+        ${renderSummary()}
       `;
       stageInfo.textContent = '— 遊戲結束 —';
       modal.style.display = 'none';
@@ -422,8 +539,42 @@
         <h2>${msg}</h2>
         <p>最終 HP：${hp} ｜ KPI：${kpi}</p>
         <p>反思：觀察每次對話的理論依據，調整回覆方式，就能兼顧心理能量與 KPI。</p>
+        ${renderSummary()}
       `;
       stageInfo.textContent = '— 今日結束，明天繼續練習邊界管理 —';
+    }
+
+    function renderSummary() {
+      if (!choiceHistory.length) return '';
+      const adviceList = buildAdvice();
+      return `
+        <div class="summary-block">
+          <h3>你的回應路徑</h3>
+          <ol>
+            ${choiceHistory.map((item, idx) => `
+              <li><strong>第 ${idx + 1} 輪｜${item.stage}</strong>（${item.sender}）：「${item.choice}」<div class="delta">HP ${formatDelta(item.deltaHp)} ｜ KPI ${formatDelta(item.deltaKpi)} ｜ ${item.feedback}</div></li>
+            `).join('')}
+          </ol>
+          <h3>調整建議</h3>
+          <ul class="advice">
+            ${adviceList.map(a => `<li>${a}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    function formatDelta(value) {
+      const sign = value > 0 ? '+' : '';
+      return `${sign}${value}`;
+    }
+
+    function buildAdvice() {
+      const advices = [];
+      if (hp < 50) advices.push('HP 偏低：安排睡眠與運動，並在回覆時優先設定時間邊界。');
+      if (kpi < 60) advices.push('KPI 偏低：回覆前先澄清期望與範圍，用分段交付換取信任。');
+      if (choiceHistory.some(c => c.deltaHp <= -18)) advices.push('曾有高耗能回應：建立「可以說不」的句型，避免一次性透支。');
+      if (!advices.length) advices.push('保持！你在界線管理與績效間取得良好平衡，持續回顧策略即可。');
+      return advices;
     }
 
     // init
